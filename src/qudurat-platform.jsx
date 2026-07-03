@@ -245,12 +245,7 @@ export default function QuduratApp() {
         style={{ backgroundColor: C.card, borderBottom: `1px solid ${C.line}` }}
       >
         <button onClick={() => setView("home")} className="flex items-center gap-2">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg"
-            style={{ background: "linear-gradient(135deg, #38A8E8, #7DD3FC)" }}
-          >
-            ★
-          </div>
+          <img src="/logo-icon-512.png" alt="نجوم القدرات" className="w-9 h-9 object-contain" />
           <div className="text-right">
             <div className="font-extrabold leading-none">نجوم القدرات</div>
             <div className="text-[11px]" style={{ color: C.sub }}>
@@ -359,12 +354,7 @@ export default function QuduratApp() {
             style={{ backgroundColor: C.card, border: `1px solid ${C.line}` }}
           >
             <div className="text-center mb-6">
-              <div
-                className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center text-white text-3xl"
-                style={{ background: "linear-gradient(135deg, #38A8E8, #7DD3FC)" }}
-              >
-                ★
-              </div>
+              <img src="/logo-icon-512.png" alt="نجوم القدرات" className="w-16 h-16 mx-auto mb-3 object-contain" />
               <h2 className="text-2xl font-black">انضم لنجوم القدرات</h2>
               <p className="text-sm mt-1" style={{ color: C.sub }}>
                 سجّل مجانًا لتتابع تقدمك وتحفظ نتائجك
