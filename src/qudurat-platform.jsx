@@ -245,10 +245,10 @@ export default function QuduratApp() {
         style={{ backgroundColor: C.card, borderBottom: `1px solid ${C.line}` }}
       >
         <button onClick={() => setView("home")} className="flex items-center gap-2">
-          <img src="/logo-icon-512.png" alt="نجوم القدرات" className="w-9 h-9 object-contain" />
+          <img src="/logo-icon-512.png" alt="نجوم القدرات" className="w-14 h-14 object-contain" />
           <div className="text-right">
-            <div className="font-extrabold leading-none">نجوم القدرات</div>
-            <div className="text-[11px]" style={{ color: C.sub }}>
+            <div className="font-extrabold leading-none text-lg">نجوم القدرات</div>
+            <div className="text-xs" style={{ color: C.sub }}>
               تدرّب بذكاء لاختبار القدرات
             </div>
           </div>
