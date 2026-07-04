@@ -148,6 +148,122 @@ function Timer({ running }) {
   );
 }
 
+// ─── خطط المذاكرة ───
+const PLAN_OPTIONS = [
+  { key: "20", days: 20, perDay: 4, perDayLabel: "٤ بنوك", label: "خطة 20 يوم", desc: "وتيرة مكثّفة: 4 بنوك أسئلة كل يوم" },
+  { key: "40", days: 40, perDay: 2, perDayLabel: "بنكين", label: "خطة 40 يوم", desc: "وتيرة مريحة: بنكين أسئلة كل يوم" },
+];
+
+function StudyPlanSection({ plan, setPlan, done, toggleDay }) {
+  const active = PLAN_OPTIONS.find((p) => p.key === plan);
+  const doneCount = active ? Object.values(done).filter(Boolean).length : 0;
+  const pct = active ? Math.round((doneCount / active.days) * 100) : 0;
+
+  return (
+    <div
+      className="rounded-3xl p-6 mb-6"
+      style={{ backgroundColor: C.card, border: `1px solid ${C.line}` }}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <div className="font-extrabold text-lg">📅 خطتك للمذاكرة</div>
+        {active && (
+          <button
+            onClick={() => setPlan(null)}
+            className="text-xs font-bold"
+            style={{ color: C.sub }}
+          >
+            تغيير الخطة
+          </button>
+        )}
+      </div>
+      <p className="text-sm mb-4" style={{ color: C.sub }}>
+        اختاري وتيرة تناسبك، وحطي علامة صح كل يوم تخلّصين بنوكه
+      </p>
+
+      {!active ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {PLAN_OPTIONS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setPlan(p.key)}
+              className="rounded-2xl p-5 text-right transition-transform hover:-translate-y-1"
+              style={{ backgroundColor: C.brandSoft, border: `1px solid ${C.brandSoft}` }}
+            >
+              <div className="font-black text-2xl mb-1" style={{ color: C.brand }}>
+                {p.label}
+              </div>
+              <div className="text-sm" style={{ color: C.ink }}>
+                {p.desc}
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div>
+          <div className="flex items-center justify-between mb-2 text-sm font-bold">
+            <span>
+              {doneCount} من {active.days} يوم
+            </span>
+            <span style={{ color: C.brand }}>{pct}٪</span>
+          </div>
+          <div
+            className="w-full h-2 rounded-full mb-5 overflow-hidden"
+            style={{ backgroundColor: C.line }}
+          >
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${pct}%`,
+                background: "linear-gradient(90deg, #38A8E8, #7DD3FC)",
+                transition: "width .4s ease",
+              }}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Array.from({ length: active.days }, (_, i) => i + 1).map((day) => {
+              const isDone = !!done[day];
+              return (
+                <label
+                  key={day}
+                  className="flex items-center gap-2 rounded-xl p-3 cursor-pointer select-none"
+                  style={{
+                    backgroundColor: isDone ? C.greenSoft : C.bg,
+                    border: `1px solid ${isDone ? C.green : C.line}`,
+                    transition: "background-color .2s ease, border-color .2s ease",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isDone}
+                    onChange={() => toggleDay(day)}
+                    className="w-5 h-5 rounded shrink-0"
+                    style={{ accentColor: C.green }}
+                  />
+                  <div>
+                    <div
+                      className="font-extrabold text-sm"
+                      style={{
+                        color: isDone ? C.green : C.ink,
+                        textDecoration: isDone ? "line-through" : "none",
+                      }}
+                    >
+                      اليوم {day}
+                    </div>
+                    <div className="text-[11px]" style={{ color: C.sub }}>
+                      {active.perDayLabel}
+                    </div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── التطبيق الرئيسي ───
 export default function QuduratApp() {
   const [questions, setQuestions] = useState(initialQuestions);
@@ -157,6 +273,29 @@ export default function QuduratApp() {
   const [selected, setSelected] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [showVideo, setShowVideo] = useState(false);
+
+  // خطة المذاكرة
+  const [planKey, setPlanKey] = useState(() => localStorage.getItem("qudurat_plan") || null);
+  const [planProgress, setPlanProgress] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("qudurat_plan_progress") || "{}");
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    if (planKey) localStorage.setItem("qudurat_plan", planKey);
+    else localStorage.removeItem("qudurat_plan");
+  }, [planKey]);
+  useEffect(() => {
+    localStorage.setItem("qudurat_plan_progress", JSON.stringify(planProgress));
+  }, [planProgress]);
+  const togglePlanDay = (day) => {
+    setPlanProgress((prev) => {
+      const current = prev[planKey] || {};
+      return { ...prev, [planKey]: { ...current, [day]: !current[day] } };
+    });
+  };
 
   // التسجيل
   const [users, setUsers] = useState([]);
@@ -309,6 +448,13 @@ export default function QuduratApp() {
                 style={{ backgroundColor: "#fff" }}
               />
             </div>
+
+            <StudyPlanSection
+              plan={planKey}
+              setPlan={setPlanKey}
+              done={planProgress[planKey] || {}}
+              toggleDay={togglePlanDay}
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
