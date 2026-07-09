@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { QUANT_BANKS } from "./quant-banks";
 
 // ─── الألوان والهوية ───
 const C = {
@@ -370,6 +371,43 @@ export default function QuduratApp() {
   const [answers, setAnswers] = useState([]);
   const [showVideo, setShowVideo] = useState(false);
 
+  // ─── وضع البنوك (اختبار بدون تصحيح فوري) ───
+  const [bank, setBank] = useState(null); // البنك الحالي
+  const [bIdx, setBIdx] = useState(0); // رقم السؤال الحالي
+  const [bSel, setBSel] = useState(null); // الاختيار الحالي (قابل للتغيير قبل "التالي")
+  const [bAnswers, setBAnswers] = useState([]); // إجابات المستخدم المؤكدة
+  const [showReview, setShowReview] = useState(false);
+
+  const startBank = (bk) => {
+    setBank(bk);
+    setBIdx(0);
+    setBSel(null);
+    setBAnswers([]);
+    setShowReview(false);
+    setView("bank");
+  };
+
+  const bankNext = () => {
+    if (bSel === null) return;
+    const newAnswers = [...bAnswers, bSel];
+    setBAnswers(newAnswers);
+    setBSel(null);
+    if (bIdx + 1 < bank.questions.length) {
+      setBIdx(bIdx + 1);
+    } else {
+      setView("bankResults");
+    }
+  };
+
+  const bq = bank ? bank.questions[bIdx] : null;
+  const bankCorrect = bank
+    ? bAnswers.filter((a, i) => a === bank.questions[i].correct).length
+    : 0;
+  const bankWrong = bAnswers.length - bankCorrect;
+  const bankPct = bank && bAnswers.length
+    ? Math.round((bankCorrect / bank.questions.length) * 100)
+    : 0;
+
   // خطة المذاكرة
   const [planKey, setPlanKey] = useState(() => localStorage.getItem("qudurat_plan") || null);
   const [planProgress, setPlanProgress] = useState(() => {
@@ -490,6 +528,7 @@ export default function QuduratApp() {
         </button>
         <div className="flex items-center gap-3">
           {view === "quiz" && <Timer running={view === "quiz"} />}
+          {view === "bank" && <Timer running={view === "bank"} />}
           {currentUser ? (
             <span
               className="text-sm font-bold px-3 py-2 rounded-xl hidden sm:inline"
@@ -585,6 +624,44 @@ export default function QuduratApp() {
                   </button>
                 );
               })}
+            </div>
+
+            {/* ─── بنوك القسم الكمي ─── */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="font-extrabold text-lg">📚 بنوك القسم الكمي</h2>
+                <Pill color={C.brand} bg={C.brandSoft}>
+                  {QUANT_BANKS.length} بنوك
+                </Pill>
+              </div>
+              <p className="text-sm mb-4" style={{ color: C.sub }}>
+                نمط اختبار حقيقي: ما تظهر الإجابات إلا بعد إنهاء البنك كاملًا، وبعدها تشوفين
+                نتيجتك بالنسبة وعدد الصح والخطأ
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {QUANT_BANKS.map((bk, i) => (
+                  <button
+                    key={bk.id}
+                    onClick={() => startBank(bk)}
+                    className="rounded-2xl p-5 text-right transition-transform hover:-translate-y-1"
+                    style={{ backgroundColor: C.card, border: `1px solid ${C.line}` }}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center font-black mb-3 text-lg"
+                      style={{ backgroundColor: C.brandSoft, color: C.brand }}
+                    >
+                      {["١", "٢", "٣"][i]}
+                    </div>
+                    <div className="font-extrabold text-lg mb-1">{bk.title}</div>
+                    <div className="text-sm mb-3" style={{ color: C.sub }}>
+                      اختبار كامل بنمط الاختبار الحقيقي
+                    </div>
+                    <Pill color={C.brand} bg={C.brandSoft}>
+                      {bk.questions.length} سؤالًا
+                    </Pill>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -784,6 +861,218 @@ export default function QuduratApp() {
                 </button>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ─── شاشة اختبار البنك (بدون تصحيح فوري) ─── */}
+        {view === "bank" && bq && (
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <div
+                className="flex-1 h-2.5 rounded-full overflow-hidden"
+                style={{ backgroundColor: C.line }}
+              >
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${(bIdx / bank.questions.length) * 100}%`,
+                    backgroundColor: C.brand,
+                    transition: "width .4s ease",
+                  }}
+                />
+              </div>
+              <span className="text-sm font-bold whitespace-nowrap" style={{ color: C.sub }}>
+                {bIdx + 1} / {bank.questions.length}
+              </span>
+            </div>
+
+            <div
+              className="rounded-3xl p-6"
+              style={{ backgroundColor: C.card, border: `1px solid ${C.line}` }}
+            >
+              <div className="flex items-center gap-2">
+                <Pill color={C.brand} bg={C.brandSoft}>
+                  {bank.title}
+                </Pill>
+                <Pill color="#92400E" bg="#FFF7E6">
+                  الإجابات تظهر بعد إنهاء البنك
+                </Pill>
+              </div>
+              <h2 className="text-xl font-extrabold mt-3 mb-5 leading-relaxed">{bq.text}</h2>
+
+              <div className="grid gap-3">
+                {bq.options.map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setBSel(i)}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-right font-bold transition-all"
+                    style={{
+                      backgroundColor: bSel === i ? C.brandSoft : C.bg,
+                      border: `2px solid ${bSel === i ? C.brand : C.line}`,
+                    }}
+                  >
+                    <span
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black shrink-0"
+                      style={{
+                        backgroundColor: bSel === i ? C.brand : C.line,
+                        color: bSel === i ? "#fff" : C.sub,
+                      }}
+                    >
+                      {["أ", "ب", "ج", "د"][i]}
+                    </span>
+                    <span>{opt}</span>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={bankNext}
+                disabled={bSel === null}
+                className="mt-5 w-full py-3.5 rounded-2xl font-extrabold text-white text-lg"
+                style={{
+                  backgroundColor: bSel === null ? C.line : C.brand,
+                  color: bSel === null ? C.sub : "#fff",
+                  cursor: bSel === null ? "not-allowed" : "pointer",
+                }}
+              >
+                {bIdx + 1 < bank.questions.length ? "السؤال التالي ←" : "إنهاء البنك وعرض النتيجة"}
+              </button>
+              <button
+                onClick={() => setView("home")}
+                className="mt-2 w-full py-2.5 rounded-2xl font-bold text-sm"
+                style={{ color: C.sub }}
+              >
+                خروج بدون حفظ النتيجة
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ─── نتيجة البنك ─── */}
+        {view === "bankResults" && bank && (
+          <div>
+            <div
+              className="rounded-3xl p-8 text-center"
+              style={{ backgroundColor: C.card, border: `1px solid ${C.line}` }}
+            >
+              <h2 className="text-2xl font-black mb-1">نتيجة {bank.title}</h2>
+              <p className="mb-5" style={{ color: C.sub }}>
+                أنهيتِ البنك كاملًا — هذي حصيلتك
+              </p>
+              <div className="flex justify-center mb-5">
+                <AccuracyRing pct={bankPct} />
+              </div>
+              <div className="flex justify-center gap-3 mb-6 flex-wrap">
+                <span
+                  className="px-5 py-3 rounded-2xl font-extrabold"
+                  style={{ backgroundColor: C.greenSoft, color: C.green }}
+                >
+                  ✓ صحيحة: {bankCorrect}
+                </span>
+                <span
+                  className="px-5 py-3 rounded-2xl font-extrabold"
+                  style={{ backgroundColor: C.redSoft, color: C.red }}
+                >
+                  ✗ خاطئة: {bankWrong}
+                </span>
+                <span
+                  className="px-5 py-3 rounded-2xl font-extrabold"
+                  style={{ backgroundColor: C.brandSoft, color: C.brand }}
+                >
+                  المجموع: {bank.questions.length}
+                </span>
+              </div>
+              <p className="font-bold mb-6">
+                {bankPct >= 70
+                  ? "مستوى ممتاز! استمري على نفس الوتيرة 💪"
+                  : bankPct >= 40
+                  ? "بداية جيدة — راجعي الأسئلة الخاطئة وأعيدي المحاولة"
+                  : "لا بأس، التكرار سرّ الإتقان. راجعي الإجابات وجرّبي من جديد"}
+              </p>
+              <div className="flex gap-3 justify-center flex-wrap">
+                <button
+                  onClick={() => setShowReview((v) => !v)}
+                  className="px-6 py-3 rounded-2xl font-extrabold text-white"
+                  style={{ backgroundColor: C.brand }}
+                >
+                  {showReview ? "إخفاء المراجعة" : "مراجعة الإجابات"}
+                </button>
+                <button
+                  onClick={() => startBank(bank)}
+                  className="px-6 py-3 rounded-2xl font-extrabold"
+                  style={{ backgroundColor: C.brandSoft, color: C.brand }}
+                >
+                  إعادة البنك
+                </button>
+                <button
+                  onClick={() => setView("home")}
+                  className="px-6 py-3 rounded-2xl font-extrabold"
+                  style={{ backgroundColor: C.brandSoft, color: C.brand }}
+                >
+                  الرئيسية
+                </button>
+              </div>
+            </div>
+
+            {showReview && (
+              <div className="mt-6 grid gap-4">
+                {bank.questions.map((qq, i) => {
+                  const user = bAnswers[i];
+                  const ok = user === qq.correct;
+                  return (
+                    <div
+                      key={i}
+                      className="rounded-2xl p-5"
+                      style={{
+                        backgroundColor: C.card,
+                        border: `2px solid ${ok ? C.green : C.red}`,
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black text-white shrink-0"
+                          style={{ backgroundColor: ok ? C.green : C.red }}
+                        >
+                          {ok ? "✓" : "✗"}
+                        </span>
+                        <span className="font-bold text-sm" style={{ color: C.sub }}>
+                          السؤال {i + 1}
+                        </span>
+                      </div>
+                      <div className="font-extrabold mb-3 leading-relaxed">{qq.text}</div>
+                      <div className="grid gap-2 text-sm">
+                        {qq.options.map((opt, j) => (
+                          <div
+                            key={j}
+                            className="px-3 py-2 rounded-xl font-bold flex items-center gap-2"
+                            style={{
+                              backgroundColor:
+                                j === qq.correct ? C.greenSoft : j === user ? C.redSoft : C.bg,
+                              border: `1px solid ${
+                                j === qq.correct ? C.green : j === user ? C.red : C.line
+                              }`,
+                            }}
+                          >
+                            <span>{["أ", "ب", "ج", "د"][j]}.</span>
+                            <span>{opt}</span>
+                            {j === qq.correct && (
+                              <span className="mr-auto text-xs" style={{ color: C.green }}>
+                                الإجابة الصحيحة
+                              </span>
+                            )}
+                            {j === user && j !== qq.correct && (
+                              <span className="mr-auto text-xs" style={{ color: C.red }}>
+                                إجابتك
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
