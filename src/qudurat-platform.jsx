@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { QUANT_BANKS } from "./quant-banks";
 
+// تحويل رقم إنجليزي إلى أرقام عربية (١، ٢، ... ٢٣)
+function toArabicNum(n) {
+  const ar = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+  return String(n).split("").map((d) => ar[+d] ?? d).join("");
+}
+
 // ─── الألوان والهوية ───
 const C = {
   bg: "#F7FBFF",
@@ -626,43 +632,82 @@ export default function QuduratApp() {
               })}
             </div>
 
-            {/* ─── بنوك القسم الكمي ─── */}
+            {/* ─── بطاقة القسم الكمي (تفتح صفحة كل البنوك) ─── */}
             <div className="mt-8">
-              <div className="flex items-center justify-between mb-1">
-                <h2 className="font-extrabold text-lg">📚 بنوك القسم الكمي</h2>
-                <Pill color={C.brand} bg={C.brandSoft}>
-                  {QUANT_BANKS.length} بنوك
-                </Pill>
-              </div>
-              <p className="text-sm mb-4" style={{ color: C.sub }}>
-                نمط اختبار حقيقي: ما تظهر الإجابات إلا بعد إنهاء البنك كاملًا، وبعدها تشوفين
-                نتيجتك بالنسبة وعدد الصح والخطأ
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {QUANT_BANKS.map((bk, i) => (
-                  <button
-                    key={bk.id}
-                    onClick={() => startBank(bk)}
-                    className="rounded-2xl p-5 text-right transition-transform hover:-translate-y-1"
-                    style={{ backgroundColor: C.card, border: `1px solid ${C.line}` }}
-                  >
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center font-black mb-3 text-lg"
-                      style={{ backgroundColor: C.brandSoft, color: C.brand }}
-                    >
-                      {["١", "٢", "٣"][i]}
-                    </div>
-                    <div className="font-extrabold text-lg mb-1">{bk.title}</div>
-                    <div className="text-sm mb-3" style={{ color: C.sub }}>
-                      اختبار كامل بنمط الاختبار الحقيقي
-                    </div>
-                    <Pill color={C.brand} bg={C.brandSoft}>
-                      {bk.questions.length} سؤالًا
-                    </Pill>
-                  </button>
-                ))}
-              </div>
+              <button
+                onClick={() => setView("quantBanks")}
+                className="w-full rounded-3xl p-8 text-right transition-transform hover:-translate-y-1 relative overflow-hidden"
+                style={{ background: "linear-gradient(135deg, #4FB3F0, #8ED6FB)", color: "#fff" }}
+              >
+                <div className="absolute top-4 left-6 text-2xl opacity-40">✦</div>
+                <div className="absolute bottom-4 left-10 text-lg opacity-30">✦</div>
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center font-black mb-4 text-2xl"
+                  style={{ backgroundColor: "rgba(255,255,255,.25)", color: "#fff" }}
+                >
+                  ١٢٣
+                </div>
+                <div className="font-black text-2xl mb-1" style={{ textShadow: "0 1px 3px rgba(0,0,0,.12)" }}>
+                  القسم الكمي
+                </div>
+                <div className="text-sm mb-4 opacity-90">
+                  {QUANT_BANKS.length} بنوك أسئلة كاملة بنمط الاختبار الحقيقي — اضغط للدخول
+                </div>
+                <span
+                  className="inline-block rounded-full px-4 py-1 text-sm font-bold"
+                  style={{ backgroundColor: "rgba(255,255,255,.25)", color: "#fff" }}
+                >
+                  {QUANT_BANKS.length} بنوك ←
+                </span>
+              </button>
             </div>
+          </div>
+        )}
+
+        {/* ─── شاشة بنوك القسم الكمي ─── */}
+        {view === "quantBanks" && (
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="font-extrabold text-lg">📚 بنوك القسم الكمي</h2>
+              <Pill color={C.brand} bg={C.brandSoft}>
+                {QUANT_BANKS.length} بنوك
+              </Pill>
+            </div>
+            <p className="text-sm mb-4" style={{ color: C.sub }}>
+              نمط اختبار حقيقي: ما تظهر الإجابات إلا بعد إنهاء البنك كاملًا، وبعدها تشوفين
+              نتيجتك بالنسبة وعدد الصح والخطأ
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {QUANT_BANKS.map((bk, i) => (
+                <button
+                  key={bk.id}
+                  onClick={() => startBank(bk)}
+                  className="rounded-2xl p-5 text-right transition-transform hover:-translate-y-1"
+                  style={{ backgroundColor: C.card, border: `1px solid ${C.line}` }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center font-black mb-3 text-lg"
+                    style={{ backgroundColor: C.brandSoft, color: C.brand }}
+                  >
+                    {toArabicNum(i + 1)}
+                  </div>
+                  <div className="font-extrabold text-lg mb-1">{bk.title}</div>
+                  <div className="text-sm mb-3" style={{ color: C.sub }}>
+                    اختبار كامل بنمط الاختبار الحقيقي
+                  </div>
+                  <Pill color={C.brand} bg={C.brandSoft}>
+                    {bk.questions.length} سؤالًا
+                  </Pill>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setView("home")}
+              className="mt-6 rounded-xl px-5 py-2 font-bold"
+              style={{ backgroundColor: C.brandSoft, color: C.brand }}
+            >
+              ← رجوع للرئيسية
+            </button>
           </div>
         )}
 
